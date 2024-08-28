@@ -10,7 +10,8 @@ import { type SubmitHandler, useForm } from "react-hook-form";
 import TextareaAutosize from "react-textarea-autosize";
 import { z } from "zod";
 import type { AI } from "./actions";
-import { HumanMessage } from "@/components/llm/message";
+import { UserMessage } from "@/components/llm/message";
+import { PriceCard } from "@/components/price-card";
 
 const ChatSchema = z.object({
 	message: z.string().min(1, "Message cannot be empty"),
@@ -37,8 +38,8 @@ export default function Home() {
 			...currentMessages,
 			{
 				id: Date.now(),
-				role: "human",
-				display: <HumanMessage>{value}</HumanMessage>,
+				role: "user",
+				display: <UserMessage>{value}</UserMessage>,
 			},
 		]);
 
