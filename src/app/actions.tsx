@@ -1,8 +1,12 @@
 "use server";
 
-import { createAI } from "ai/rsc";
+import { z } from "zod";
+import { createAI, getMutableAIState, streamUI } from "ai/rsc";
 import type { ReactNode } from "react";
-import type { ToolInvocation } from "ai";
+import type { CoreMessage, ToolInvocation } from "ai";
+import { BotCard, BotMessage } from "@/components/llm/message";
+import { openai } from "@ai-sdk/openai";
+import { Loader2 } from "lucide-react";
 
 // system-message
 const content = `\
@@ -19,7 +23,87 @@ If the user wants to do anything else, it is an impossible task, so you should r
 Besides getting prices of cryptocurrencies, you can also chat with users.
 `;
 
-export const sendMessages = async () => {};
+export const sendMessages = async (
+	message: string,
+): Promise<{
+	id: number;
+	role: "human" | "assistant";
+	display: ReactNode;
+}> => {
+	const history = getMutableAIState<typeof AI>();
+
+	history.update([
+		...history.get(),
+		{
+			role: "human",
+			content: message,
+		},
+	]);
+
+	const reply = await streamUI({
+		model: openai("gpt-4o-mini"),
+		messages: [
+			{
+				role: "system",
+				content,
+				toolInvocations: [],
+			},
+			...history.get(),
+		] as CoreMessage[],
+
+		initial: (
+			<BotMessage className="items-center flex shrink-0 select-none justify-center">
+				<Loader2 className="animate-spin w-5 stroke-zinc-900" />
+			</BotMessage>
+		),
+		text: ({ content, done }) => {
+			if (done) {
+				history.update([
+					...history.get(),
+					{
+						role: "assistant",
+						content,
+					},
+				]);
+			}
+
+			return <BotMessage>{content}</BotMessage>;
+		},
+		temperature: 0,
+		tools: {
+			get_crypto_price: {
+				description: "Get the current price of a cryptocurrency",
+				parameters: z.object({
+					symbol: z
+						.string()
+						.describe(
+							"The symbol of the cryptocurrency. For example, BTC/ETH/SOL",
+						),
+				}),
+				generate: async function* ({ symbol }: { symbol: string }) {
+					yield <BotCard>Loading...</BotCard>;
+					return null;
+				},
+			},
+			get_crypto_stats: {
+				description: "Get the market stats of a cryptocurrency",
+				parameters: z.object({
+					slug: z
+						.string()
+						.describe(
+							"The name of the cryptocurrency in lowercase. For example, bitcoin/ethereum/solana",
+						),
+				}),
+			},
+		},
+	});
+
+	return {
+		id: Date.now(),
+		role: "assistant",
+		display: reply.value,
+	};
+};
 
 export type AIState = Array<{
 	id?: "number";
@@ -29,7 +113,7 @@ export type AIState = Array<{
 }>;
 
 export type UIState = Array<{
-	id?: "number";
+	id?: number;
 	role: "human" | "assistant";
 	display: ReactNode;
 	toolInvocations?: ToolInvocation[];

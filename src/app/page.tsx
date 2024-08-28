@@ -3,23 +3,57 @@ import { ChatList } from "@/components/chat-list";
 import { ChatScrollAnchor } from "@/components/chat-scroll-anchor";
 import { Button } from "@/components/ui/button";
 import { useEnterSubmit } from "@/lib/use-enter-submit";
+import { useActions, useUIState } from "ai/rsc";
 import { ArrowDownIcon, PlusIcon } from "lucide-react";
 
-import { useForm } from "react-hook-form";
+import { type SubmitHandler, useForm } from "react-hook-form";
 import TextareaAutosize from "react-textarea-autosize";
+import { z } from "zod";
+import type { AI } from "./actions";
+import { HumanMessage } from "@/components/llm/message";
+
+const ChatSchema = z.object({
+	message: z.string().min(1, "Message cannot be empty"),
+});
+
+export type ChatInput = z.infer<typeof ChatSchema>;
 
 export default function Home() {
-	const form = useForm();
+	const form = useForm<ChatInput>();
 	const { formRef, onKeyDown } = useEnterSubmit();
 
-	const onSubmit = (data: any) => {
-		console.log({ data });
+	const [messages, setMessages] = useUIState<typeof AI>();
+	const { sendMessages } = useActions<typeof AI>();
+
+	const onSubmit: SubmitHandler<ChatInput> = async (data) => {
+		const value = data.message.trim();
+		formRef.current?.reset();
+
+		if (!value) {
+			return;
+		}
+
+		setMessages((currentMessages) => [
+			...currentMessages,
+			{
+				id: Date.now(),
+				role: "human",
+				display: <HumanMessage>{value}</HumanMessage>,
+			},
+		]);
+
+		try {
+			const responseMessage = await sendMessages(value);
+			setMessages((currentMessages) => [...currentMessages, responseMessage]);
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 	return (
 		<main>
 			<div className="pb-[200px] pt-4 md:pt-10">
-				<ChatList messages={[]} />
+				<ChatList messages={messages} />
 				<ChatScrollAnchor />
 			</div>
 
