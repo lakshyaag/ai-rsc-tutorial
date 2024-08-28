@@ -4,12 +4,17 @@ import { z } from "zod";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
 import type { ReactNode } from "react";
 import type { CoreMessage, ToolInvocation } from "ai";
+import { LangChainAdapter } from "ai";
 import { BotCard, BotMessage } from "@/components/llm/message";
 import { openai } from "@ai-sdk/openai";
 import { Loader2 } from "lucide-react";
 import { sleep } from "@/lib/utils";
 import { PriceCard } from "@/components/price-card";
 import { PriceChart } from "@/components/price-chart";
+import {
+	PriceCardSkeleton,
+	PriceChartSkeleton,
+} from "@/components/llm/skeleton";
 
 // system-message
 const content = `\
@@ -83,8 +88,11 @@ export async function sendMessages(message: string): Promise<{
 						),
 				}),
 				generate: async function* ({ symbol }: { symbol: string }) {
-					console.log({ symbol });
-					yield <BotCard>Loading...</BotCard>;
+					yield (
+						<BotCard>
+							<PriceCardSkeleton />
+						</BotCard>
+					);
 
 					const params = new URLSearchParams({
 						baseSymbol: symbol,
@@ -135,8 +143,11 @@ export async function sendMessages(message: string): Promise<{
 				}),
 
 				generate: async function* ({ slug }: { slug: string }) {
-					console.log({ slug });
-					yield <BotCard>Loading...</BotCard>;
+					yield (
+						<BotCard>
+							<PriceChartSkeleton />
+						</BotCard>
+					);
 
 					const params = new URLSearchParams({
 						interval: "d1",

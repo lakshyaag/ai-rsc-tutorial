@@ -11,7 +11,6 @@ import TextareaAutosize from "react-textarea-autosize";
 import { z } from "zod";
 import type { AI } from "./actions";
 import { UserMessage } from "@/components/llm/message";
-import { PriceCard } from "@/components/price-card";
 
 const ChatSchema = z.object({
 	message: z.string().min(1, "Message cannot be empty"),
