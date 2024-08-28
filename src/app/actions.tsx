@@ -139,7 +139,7 @@ export async function sendMessages(message: string): Promise<{
 					yield <BotCard>Loading...</BotCard>;
 
 					const params = new URLSearchParams({
-						interval: "h1",
+						interval: "d1",
 					});
 
 					const stats = await (
@@ -147,8 +147,6 @@ export async function sendMessages(message: string): Promise<{
 							`https://api.coincap.io/v2/assets/${slug}/history?${params.toString()}`,
 						)
 					).json();
-
-					console.log(stats);
 
 					await sleep(1000);
 

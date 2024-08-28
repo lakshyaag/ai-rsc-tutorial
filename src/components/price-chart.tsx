@@ -16,18 +16,17 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
+import { formatPrice } from "@/lib/format-price";
 
 interface PriceChartData {
 	time: number;
-	priceUsd: number;
+	priceUsd: string;
 }
 
 const chartConfig = {
-	views: {
-		label: "Price",
-	},
 	priceUsd: {
 		label: "Price",
+		color: "text-blue-500",
 	},
 } satisfies ChartConfig;
 
@@ -39,8 +38,8 @@ export function PriceChart({
 		<Card>
 			<CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
 				<div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
-					<CardTitle>Price Chart</CardTitle>
-					<CardDescription>{symbol}</CardDescription>
+					<CardTitle>Daily price chart</CardTitle>
+					<CardDescription>Symbol: {symbol}</CardDescription>
 				</div>
 			</CardHeader>
 			<CardContent className="px-2 sm:p-6">
@@ -65,26 +64,26 @@ export function PriceChart({
 							minTickGap={32}
 							tickFormatter={(value) => {
 								const date = new Date(value);
-								return date.toLocaleTimeString("en-US", {
-									hour: "numeric",
+								return date.toLocaleDateString("en-US", {
 									day: "numeric",
 									month: "short",
+									year: "numeric",
 								});
 							}}
 						/>
 						<ChartTooltip
 							content={
 								<ChartTooltipContent
-									className="w-[150px]"
-									nameKey="priceUsd"
-									labelFormatter={(value) => {
-										const date = new Date(value);
-										return date.toLocaleTimeString("en-US", {
-											hour: "numeric",
-											day: "numeric",
-											month: "short",
-										});
-									}}
+									hideLabel
+									formatter={(value, name) => (
+										<div className="flex min-w-[130px] items-center text-xs text-muted-foreground">
+											{chartConfig[name as keyof typeof chartConfig]?.label ||
+												name}
+											<div className="ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums text-foreground">
+												{formatPrice(Number(value))}
+											</div>
+										</div>
+									)}
 								/>
 							}
 						/>
